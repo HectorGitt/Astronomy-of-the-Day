@@ -97,6 +97,7 @@ def tweet():
 def tweet_handler():
     while True:
         if tries > 0 and tweet_status is False:
+            print('Trying again, waiting 1 hour')
             time.sleep(3600)
         if tweet_status:
             break
