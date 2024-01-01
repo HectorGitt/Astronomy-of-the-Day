@@ -36,6 +36,7 @@ api = tweepy.API(auth=auth, wait_on_rate_limit=True)
 tweet_status = False
 api_status = False
 tries = 0
+image_status = False
 
 
 def chunkstring(string, length):
@@ -56,15 +57,21 @@ def tweet_parser():
 def tweet():
     try:
         global tries
+        global image_status
         tries += 1
         tweet_text, media_url, date_obj = tweet_parser()
         if api_status is False:
             return
         request = requests.get(media_url, stream=True)
         if request.status_code == 200:
-            with open('aiod.jpg', 'wb') as image:
-                for chunk in request:
-                    image.write(chunk)
+            if media_url.endswith('.jpg'):    
+                with open('aiod.jpg', 'wb') as image:
+                    for chunk in request:
+                        image.write(chunk)
+                        image_status = True
+                        media = api.media_upload("aiod.jpg")
+            else:
+                print("No image found")
         else:
             return
         media = api.media_upload("aiod.jpg")    
