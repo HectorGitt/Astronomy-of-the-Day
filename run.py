@@ -87,7 +87,8 @@ def tweet():
 
         global tweet_status
         tweet_status = True
-        os.remove("aiod.jpg")
+        if image_status:
+            os.remove("aiod.jpg")
         print("Tweeted", datetime.now())
     except Exception as e:
         print(e)
