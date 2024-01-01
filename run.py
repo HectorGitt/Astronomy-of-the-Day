@@ -74,10 +74,17 @@ def tweet():
                 print("No image found")
         else:
             return
-        media = api.media_upload("aiod.jpg")    
+        
         more_string = f'\nRead more at https://apod.nasa.gov/apod/ap{date_obj.strftime("%y%m%d")}.html'
-        tweet_text += more_string
-        client.create_tweet(text=tweet_text, media_ids=[media.media_id])
+        if image_status:
+            tweet_text += more_string
+            client.create_tweet(text=tweet_text, media_ids=[media.media_id])
+        else: 
+            media_url = media_url.replace("/embed", "")
+            tweet_text = chunkstring(tweet_text, 220) + media_url + more_string
+            client.create_tweet(text=tweet_text)
+            
+
         global tweet_status
         tweet_status = True
         os.remove("aiod.jpg")
