@@ -68,8 +68,8 @@ def tweet():
                 with open('aiod.jpg', 'wb') as image:
                     for chunk in request:
                         image.write(chunk)
-                        image_status = True
-                        media = api.media_upload("aiod.jpg")
+                image_status = True
+                media = api.media_upload("aiod.jpg")
             else:
                 print("No image found")
         else:
