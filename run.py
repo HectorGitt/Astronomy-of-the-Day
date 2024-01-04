@@ -24,7 +24,7 @@ access_token_secret = config('ACCESS_TOKEN_SECRET')
 bearer_token = config('BEARER_TOKEN')
 nasa_api_key = config('NASA_API_KEY')
 
-
+# Create API object
 auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
 auth.set_access_token(access_token, access_token_secret)
 client = tweepy.Client(bearer_token, consumer_key, consumer_secret, access_token, access_token_secret,)
