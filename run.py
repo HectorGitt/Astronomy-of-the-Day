@@ -36,6 +36,7 @@ api = tweepy.API(auth=auth, wait_on_rate_limit=True)
 tweet_status = False
 api_status = False
 tries = 0
+#set image status to false
 image_status = False
 
 
