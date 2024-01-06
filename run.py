@@ -80,9 +80,10 @@ def tweet():
         if image_status:
             tweet_text += more_string
             client.create_tweet(text=tweet_text, media_ids=[media.media_id])
-        else: 
-            media_url = media_url.replace("/embed", "")
-            tweet_text = chunkstring(tweet_text, 220) + media_url + more_string
+        else:
+            if "youtube" in media_url:
+                media_url = "https://youtu.be/" + media_url.split("/")[-1]
+            tweet_text = chunkstring(tweet_text, 220) + "\n" + media_url + more_string
             client.create_tweet(text=tweet_text)
             
 
