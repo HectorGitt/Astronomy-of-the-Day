@@ -47,7 +47,7 @@ def tweet_parser():
     response = requests.get(f"https://api.nasa.gov/planetary/apod?api_key={nasa_api_key}")
     date_str = response.json().get("date")
     date_object = datetime.strptime(date_str, '%Y-%m-%d').date()
-    tweet_text = f'{date_object.strftime("%a, %b %d, %Y")}\n- {response.json().get("title")}\n{chunkstring(response.json().get("explanation"), 197)}'
+    tweet_text = f'{date_object.strftime("%a, %b %d, %Y")}\n- {response.json().get("title")}\n{chunkstring(response.json().get("explanation"), 185)}'
     media_url = response.json().get("url")
     if response.status_code == 200:
         global api_status
