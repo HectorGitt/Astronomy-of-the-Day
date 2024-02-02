@@ -65,7 +65,8 @@ def tweet():
             return
         request = requests.get(media_url, stream=True)
         if request.status_code == 200:
-            if media_url.endswith('.jpg'):    
+            img_formats = ('.jpg', '.png', '.jpeg', '.gif', '.bmp', '.tiff', '.webp')
+            if media_url.endswith(img_formats):    
                 with open('aiod.jpg', 'wb') as image:
                     for chunk in request:
                         image.write(chunk)
