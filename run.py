@@ -5,6 +5,7 @@ from datetime import datetime
 import os
 import time
 import textwrap
+from utils import get_message
 
 # Authenticate to Twitter
 
@@ -47,12 +48,12 @@ def tweet_parser():
     response = requests.get(f"https://api.nasa.gov/planetary/apod?api_key={nasa_api_key}")
     date_str = response.json().get("date")
     date_object = datetime.strptime(date_str, '%Y-%m-%d').date()
-    tweet_text = f'{date_object.strftime("%a, %b %d, %Y")}\n- {response.json().get("title")}\n{chunkstring(response.json().get("explanation"), 160)}'
+    #tweet_text = f'{date_object.strftime("%a, %b %d, %Y")}\n- {response.json().get("title")}\n{chunkstring(response.json().get("explanation"), 160)}'
     media_url = response.json().get("url")
     if response.status_code == 200:
         global api_status
         api_status = True
-    return tweet_text, media_url, date_object
+    return response.json().get("explanation"), media_url, date_object.strftime("%a, %b %d, %Y")
 
 
 def tweet():
@@ -60,7 +61,8 @@ def tweet():
         global tries
         global image_status
         tries += 1
-        tweet_text, media_url, date_obj = tweet_parser()
+        image_text, media_url, date_obj = tweet_parser()
+        caption = get_message(str(date_obj)+ " " + image_text)
         if api_status is False:
             return
         request = requests.get(media_url, stream=True)
@@ -77,15 +79,17 @@ def tweet():
         else:
             return
         
-        more_string = f'\nRead more at https://apod.nasa.gov/apod/ap{date_obj.strftime("%y%m%d")}.html'
+        #more_string = f'\nRead more at https://apod.nasa.gov/apod/ap{date_obj.strftime("%y%m%d")}.html'
         if image_status:
-            tweet_text += more_string
-            client.create_tweet(text=tweet_text, media_ids=[media.media_id])
+            #tweet_text += more_string
+            client.create_tweet(text=caption, media_ids=[media.media_id])
         else:
             if "youtube" in media_url:
                 media_url = "https://youtu.be/" + media_url.split("/")[-1]
-            tweet_text = chunkstring(tweet_text, 210) + "\n" + media_url + more_string
-            client.create_tweet(text=tweet_text)
+            #tweet_text = chunkstring(tweet_text, 210) + "\n" + media_url + more_string
+            #tweet_text = chunkstring(caption, 210) + "\n" + media_url
+            caption = chunkstring(caption, 210) + "\n" + media_url
+            client.create_tweet(text=caption + "\n" + media_url)
             
 
         global tweet_status
