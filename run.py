@@ -63,15 +63,23 @@ def tweet():
         caption = get_message(str(date_obj) + " " + image_text)
         request = requests.get(media_url, stream=True)
         if request.status_code == 200:
+            logging.info("Successfully connected to media from URL")
             img_formats = ('.jpg', '.png', '.jpeg', '.gif', '.bmp', '.tiff', '.webp')
             if media_url.endswith(img_formats):
                 with open('aiod.jpg', 'wb') as image:
-                    for chunk in request:
-                        image.write(chunk)
+                    total_length = int(request.headers.get('content-length'))
+                    downloaded = 0
+                    for chunk in request.iter_content(chunk_size=1024):
+                        if chunk:
+                            image.write(chunk)
+                            downloaded += len(chunk)
+                            done = int(50 * downloaded / total_length)
+                            logging.info(f"Download progress: [{'=' * done}{' ' * (50-done)}] {done * 2}%")
                 image_status = True
                 media = api.media_upload("aiod.jpg")
                 logging.info("Image downloaded and uploaded to Twitter")
             else:
+                logging.info("No image found in the media URL")
                 logging.info("No image found in the media URL")
         else:
             logging.error(f"Failed to download media: {request.status_code}")
