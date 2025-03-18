@@ -5,19 +5,13 @@ from datetime import datetime
 import os
 import time
 import textwrap
+import logging
 from utils import get_message
 
-# Authenticate to Twitter
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-""" dotenv.load_dotenv()
-# Load environment variables with dotenv
-consumer_key = os.getenv("CONSUMER_KEY")
-consumer_secret = os.getenv("CONSUMER_SECRET")
-access_token = os.getenv("ACCESS_TOKEN")
-access_token_secret = os.getenv("ACCESS_TOKEN_SECRET")
-bearer_token = os.getenv("BEARER_TOKEN")
- """
-#import config from .env file
+# Authenticate to Twitter
 consumer_key = config('CONSUMER_KEY')
 consumer_secret = config('CONSUMER_SECRET')
 access_token = config('ACCESS_TOKEN')
@@ -28,90 +22,89 @@ nasa_api_key = config('NASA_API_KEY')
 # Create API object
 auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
 auth.set_access_token(access_token, access_token_secret)
-client = tweepy.Client(bearer_token, consumer_key, consumer_secret, access_token, access_token_secret,)
+client = tweepy.Client(bearer_token, consumer_key, consumer_secret, access_token, access_token_secret)
 api = tweepy.API(auth=auth, wait_on_rate_limit=True)
-
-#fetch aod from nasa api
-#https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY
 
 tweet_status = False
 api_status = False
 tries = 0
-#set image status to false
 image_status = False
-
 
 def chunkstring(string, length):
     return textwrap.shorten(string, length, placeholder='...')
 
 def tweet_parser():
+    logging.info("Fetching Astronomy Picture of the Day from NASA API")
     response = requests.get(f"https://api.nasa.gov/planetary/apod?api_key={nasa_api_key}")
-    date_str = response.json().get("date")
-    date_object = datetime.strptime(date_str, '%Y-%m-%d').date()
-    #tweet_text = f'{date_object.strftime("%a, %b %d, %Y")}\n- {response.json().get("title")}\n{chunkstring(response.json().get("explanation"), 160)}'
-    media_url = response.json().get("url")
     if response.status_code == 200:
         global api_status
         api_status = True
-    return response.json().get("explanation"), media_url, date_object.strftime("%a, %b %d, %Y")
+        logging.info("Successfully fetched data from NASA API")
+    else:
+        logging.error(f"Failed to fetch data from NASA API: {response.status_code}")
+        return None, None, None
 
+    date_str = response.json().get("date")
+    date_object = datetime.strptime(date_str, '%Y-%m-%d').date()
+    media_url = response.json().get("url")
+    return response.json().get("explanation"), media_url, date_object.strftime("%a, %b %d, %Y")
 
 def tweet():
     try:
         global tries
         global image_status
         tries += 1
+        logging.info(f"Attempt number {tries} to tweet")
         image_text, media_url, date_obj = tweet_parser()
-        caption = get_message(str(date_obj)+ " " + image_text)
-        if api_status is False:
+        if not api_status:
+            logging.warning("API status is False, skipping tweet")
             return
+
+        caption = get_message(str(date_obj) + " " + image_text)
         request = requests.get(media_url, stream=True)
         if request.status_code == 200:
             img_formats = ('.jpg', '.png', '.jpeg', '.gif', '.bmp', '.tiff', '.webp')
-            if media_url.endswith(img_formats):    
+            if media_url.endswith(img_formats):
                 with open('aiod.jpg', 'wb') as image:
                     for chunk in request:
                         image.write(chunk)
                 image_status = True
                 media = api.media_upload("aiod.jpg")
+                logging.info("Image downloaded and uploaded to Twitter")
             else:
-                print("No image found")
+                logging.info("No image found in the media URL")
         else:
+            logging.error(f"Failed to download media: {request.status_code}")
             return
-        
-        #more_string = f'\nRead more at https://apod.nasa.gov/apod/ap{date_obj.strftime("%y%m%d")}.html'
+
         if image_status:
-            #tweet_text += more_string
             client.create_tweet(text=caption, media_ids=[media.media_id])
+            logging.info("Tweeted with image")
         else:
             if "youtube" in media_url:
                 media_url = "https://youtu.be/" + media_url.split("/")[-1]
-            #tweet_text = chunkstring(tweet_text, 210) + "\n" + media_url + more_string
-            #tweet_text = chunkstring(caption, 210) + "\n" + media_url
             caption = chunkstring(caption, 210) + "\n" + media_url
             client.create_tweet(text=caption + "\n" + media_url)
-            
+            logging.info("Tweeted without image")
 
         global tweet_status
         tweet_status = True
         if image_status:
             os.remove("aiod.jpg")
-        print("Tweeted", datetime.now())
+        logging.info("Tweeted successfully at %s", datetime.now())
     except Exception as e:
-        print(e)
-        print("Tweet failed", datetime.now())
+        logging.error(f"Tweet failed: {e}")
+        logging.error("Tweet failed at %s", datetime.now())
 
 def tweet_handler():
     while True:
-        if tries > 0 and tweet_status is False:
-            print('Trying again, waiting 1 hour')
+        if tries > 0 and not tweet_status:
+            logging.info("Trying again, waiting 1 hour")
             time.sleep(3600)
         if tweet_status:
             break
         else:
             tweet()
-            
-        
-if __name__ == "__main__":
-        tweet_handler()
 
+if __name__ == "__main__":
+    tweet_handler()
