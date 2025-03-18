@@ -98,6 +98,9 @@ def tweet():
 
 def tweet_handler():
     while True:
+        if tries >= 3 and not tweet_status:
+            logging.error("Failed to tweet after 3 attempts")
+            break
         if tries > 0 and not tweet_status:
             logging.info("Trying again, waiting 1 hour")
             time.sleep(3600)
