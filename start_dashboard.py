@@ -168,7 +168,7 @@ def main():
     print("=" * 50)
 
     # Check environment and dependencies
-    check_env_file()
+    # check_env_file()
     check_dependencies()
 
     # Get startup choice from args or interactive input
