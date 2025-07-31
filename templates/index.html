@@ -1,0 +1,1328 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Astronomy Bot Dashboard</title>
+		<link
+			href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
+			rel="stylesheet"
+		/>
+		<link
+			href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+			rel="stylesheet"
+		/>
+		<style>
+			:root {
+				--primary-color: #1d1f23;
+				--secondary-color: #1da1f2;
+				--accent-color: #14171a;
+				--text-color: #ffffff;
+				--muted-color: #8899a6;
+				--success-color: #17bf63;
+				--warning-color: #ffad1f;
+				--error-color: #e0245e;
+			}
+
+			body {
+				background: linear-gradient(135deg, #0c0e16 0%, #1a1d29 100%);
+				color: var(--text-color);
+				font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+					Roboto, sans-serif;
+				min-height: 100vh;
+			}
+
+			.navbar {
+				background: rgba(29, 31, 35, 0.95);
+				backdrop-filter: blur(10px);
+				border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+			}
+
+			.navbar-brand {
+				color: var(--secondary-color) !important;
+				font-weight: bold;
+			}
+
+			.card {
+				background: rgba(29, 31, 35, 0.8);
+				border: 1px solid rgba(255, 255, 255, 0.1);
+				backdrop-filter: blur(10px);
+				border-radius: 16px;
+				transition: all 0.3s ease;
+			}
+
+			.card:hover {
+				transform: translateY(-2px);
+				box-shadow: 0 8px 25px rgba(29, 161, 242, 0.15);
+				border-color: rgba(29, 161, 242, 0.3);
+			}
+
+			.card-header {
+				background: rgba(29, 161, 242, 0.1);
+				border-bottom: 1px solid rgba(29, 161, 242, 0.2);
+				border-radius: 16px 16px 0 0 !important;
+			}
+
+			.btn-primary {
+				background: linear-gradient(
+					45deg,
+					var(--secondary-color),
+					#1991db
+				);
+				border: none;
+				border-radius: 25px;
+				padding: 8px 20px;
+				transition: all 0.3s ease;
+			}
+
+			.btn-primary:hover {
+				transform: translateY(-1px);
+				box-shadow: 0 4px 15px rgba(29, 161, 242, 0.4);
+			}
+
+			.tweet-card {
+				border-left: 4px solid var(--secondary-color);
+				margin-bottom: 1rem;
+				transition: all 0.3s ease;
+			}
+
+			.tweet-card:hover {
+				border-left-color: var(--success-color);
+			}
+
+			.reply-card {
+				border-left: 4px solid var(--success-color);
+				background: rgba(23, 191, 99, 0.05);
+			}
+
+			.repost-card {
+				border-left: 4px solid var(--warning-color);
+				background: rgba(255, 173, 31, 0.05);
+			}
+
+			.processed-badge {
+				background: linear-gradient(
+					45deg,
+					var(--success-color),
+					#1ea64b
+				);
+				color: white;
+				font-size: 0.75rem;
+				padding: 4px 8px;
+				border-radius: 12px;
+			}
+
+			.pending-badge {
+				background: linear-gradient(45deg, var(--muted-color), #657786);
+				color: white;
+				font-size: 0.75rem;
+				padding: 4px 8px;
+				border-radius: 12px;
+			}
+
+			.stat-card {
+				background: linear-gradient(
+					135deg,
+					rgba(29, 161, 242, 0.1),
+					rgba(29, 161, 242, 0.05)
+				);
+				border: 1px solid rgba(29, 161, 242, 0.2);
+			}
+
+			.loading-spinner {
+				border: 3px solid rgba(29, 161, 242, 0.3);
+				border-radius: 50%;
+				border-top: 3px solid var(--secondary-color);
+				width: 40px;
+				height: 40px;
+				animation: spin 1s linear infinite;
+				margin: 20px auto;
+			}
+
+			@keyframes spin {
+				0% {
+					transform: rotate(0deg);
+				}
+				100% {
+					transform: rotate(360deg);
+				}
+			}
+
+			.engagement-metrics {
+				display: flex;
+				gap: 15px;
+				margin-top: 10px;
+			}
+
+			.metric {
+				color: var(--muted-color);
+				font-size: 0.9rem;
+			}
+
+			.metric i {
+				margin-right: 5px;
+			}
+
+			.timestamp {
+				color: var(--muted-color);
+				font-size: 0.85rem;
+			}
+
+			.author-info {
+				display: flex;
+				align-items: center;
+				gap: 10px;
+				margin-bottom: 10px;
+			}
+
+			.author-avatar {
+				width: 32px;
+				height: 32px;
+				border-radius: 50%;
+				background: var(--secondary-color);
+			}
+
+			.refresh-btn {
+				position: fixed;
+				bottom: 20px;
+				right: 20px;
+				width: 56px;
+				height: 56px;
+				border-radius: 50%;
+				background: linear-gradient(
+					45deg,
+					var(--secondary-color),
+					#1991db
+				);
+				border: none;
+				color: white;
+				font-size: 1.2rem;
+				box-shadow: 0 4px 15px rgba(29, 161, 242, 0.3);
+				transition: all 0.3s ease;
+				z-index: 1000;
+			}
+
+			.refresh-btn:hover {
+				transform: scale(1.1);
+				box-shadow: 0 6px 20px rgba(29, 161, 242, 0.4);
+			}
+
+			.refresh-btn.loading {
+				animation: spin 1s linear infinite;
+			}
+
+			.log-entry {
+				font-family: "Courier New", monospace;
+				font-size: 0.85rem;
+				line-height: 1.4;
+				padding: 8px 12px;
+				margin-bottom: 2px;
+				border-radius: 4px;
+				border-left: 3px solid transparent;
+			}
+
+			.log-entry.level-DEBUG {
+				background: rgba(108, 117, 125, 0.1);
+				border-left-color: #6c757d;
+			}
+
+			.log-entry.level-INFO {
+				background: rgba(13, 202, 240, 0.1);
+				border-left-color: #0dcaf0;
+			}
+
+			.log-entry.level-WARNING {
+				background: rgba(255, 193, 7, 0.1);
+				border-left-color: #ffc107;
+			}
+
+			.log-entry.level-ERROR {
+				background: rgba(220, 53, 69, 0.1);
+				border-left-color: #dc3545;
+			}
+
+			.log-entry.level-CRITICAL {
+				background: rgba(220, 53, 69, 0.2);
+				border-left-color: #dc3545;
+				border-left-width: 5px;
+			}
+
+			.log-timestamp {
+				color: var(--muted-color);
+				font-weight: bold;
+			}
+
+			.log-level {
+				font-weight: bold;
+				padding: 2px 6px;
+				border-radius: 3px;
+				font-size: 0.75rem;
+			}
+
+			.log-level.DEBUG {
+				background: #6c757d;
+				color: white;
+			}
+
+			.log-level.INFO {
+				background: #0dcaf0;
+				color: white;
+			}
+
+			.log-level.WARNING {
+				background: #ffc107;
+				color: black;
+			}
+
+			.log-level.ERROR {
+				background: #dc3545;
+				color: white;
+			}
+
+			.log-level.CRITICAL {
+				background: #dc3545;
+				color: white;
+				animation: pulse 1s infinite;
+			}
+
+			@keyframes pulse {
+				0%,
+				100% {
+					opacity: 1;
+				}
+				50% {
+					opacity: 0.7;
+				}
+			}
+
+			.bot-response-card {
+				border-left: 4px solid var(--secondary-color);
+				margin-bottom: 1rem;
+				transition: all 0.3s ease;
+			}
+
+			.bot-response-card.type-reply {
+				border-left-color: var(--success-color);
+				background: rgba(23, 191, 99, 0.05);
+			}
+
+			.bot-response-card.type-repost_comment {
+				border-left-color: var(--warning-color);
+				background: rgba(255, 173, 31, 0.05);
+			}
+
+			.bot-response-card:hover {
+				transform: translateY(-1px);
+				box-shadow: 0 4px 15px rgba(29, 161, 242, 0.15);
+			}
+
+			.response-type-badge {
+				font-size: 0.75rem;
+				padding: 4px 8px;
+				border-radius: 12px;
+			}
+
+			.response-type-badge.reply {
+				background: linear-gradient(
+					45deg,
+					var(--success-color),
+					#1ea64b
+				);
+				color: white;
+			}
+
+			.response-type-badge.repost_comment {
+				background: linear-gradient(
+					45deg,
+					var(--warning-color),
+					#ff8c00
+				);
+				color: white;
+			}
+
+			.nav-tabs .nav-link {
+				color: var(--muted-color);
+				border: 1px solid transparent;
+				background: rgba(29, 31, 35, 0.5);
+			}
+
+			.nav-tabs .nav-link:hover {
+				color: var(--text-color);
+				background: rgba(29, 31, 35, 0.8);
+				border-color: rgba(29, 161, 242, 0.3);
+			}
+
+			.nav-tabs .nav-link.active {
+				color: var(--secondary-color);
+				background: rgba(29, 31, 35, 0.9);
+				border-color: rgba(29, 161, 242, 0.5);
+				border-bottom-color: transparent;
+			}
+
+			.log-container {
+				max-height: 600px;
+				overflow-y: auto;
+				background: rgba(20, 22, 26, 0.8);
+				border-radius: 8px;
+				padding: 15px;
+			}
+
+			.log-container::-webkit-scrollbar {
+				width: 8px;
+			}
+
+			.log-container::-webkit-scrollbar-track {
+				background: rgba(255, 255, 255, 0.1);
+				border-radius: 4px;
+			}
+
+			.log-container::-webkit-scrollbar-thumb {
+				background: var(--secondary-color);
+				border-radius: 4px;
+			}
+
+			.log-container::-webkit-scrollbar-thumb:hover {
+				background: #1991db;
+			}
+		</style>
+	</head>
+	<body>
+		<!-- Navigation -->
+		<nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+			<div class="container">
+				<a class="navbar-brand" href="#">
+					<i class="fas fa-rocket me-2"></i>
+					Astronomy Bot Dashboard
+				</a>
+				<div class="navbar-nav ms-auto">
+					<button
+						class="btn btn-outline-light btn-sm"
+						onclick="refreshData()"
+					>
+						<i class="fas fa-sync-alt me-1"></i>
+						Refresh
+					</button>
+				</div>
+			</div>
+		</nav>
+
+		<!-- Main Content -->
+		<div class="container mt-4">
+			<!-- Stats Row -->
+			<div class="row mb-4">
+				<div class="col-md-3">
+					<div class="card stat-card">
+						<div class="card-body text-center">
+							<h5 class="card-title">
+								<i class="fas fa-twitter text-primary"></i>
+								Recent Tweets
+							</h5>
+							<h2 id="tweets-count" class="text-primary">-</h2>
+						</div>
+					</div>
+				</div>
+				<div class="col-md-3">
+					<div class="card stat-card">
+						<div class="card-body text-center">
+							<h5 class="card-title">
+								<i class="fas fa-reply text-success"></i>
+								Total Replies
+							</h5>
+							<h2 id="replies-count" class="text-success">-</h2>
+						</div>
+					</div>
+				</div>
+				<div class="col-md-3">
+					<div class="card stat-card">
+						<div class="card-body text-center">
+							<h5 class="card-title">
+								<i class="fas fa-retweet text-warning"></i>
+								Total Reposts
+							</h5>
+							<h2 id="reposts-count" class="text-warning">-</h2>
+						</div>
+					</div>
+				</div>
+				<div class="col-md-3">
+					<div class="card stat-card">
+						<div class="card-body text-center">
+							<h5 class="card-title">
+								<i class="fas fa-robot text-info"></i>
+								Bot Responses
+							</h5>
+							<h2 id="bot-responses-count" class="text-info">
+								-
+							</h2>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Controls -->
+			<div class="row mb-4">
+				<div class="col-12">
+					<div class="card">
+						<div class="card-body">
+							<div class="row align-items-center">
+								<div class="col-md-4">
+									<label for="hoursRange" class="form-label"
+										>Time Range:
+										<span id="hoursValue">24</span>
+										hours</label
+									>
+									<input
+										type="range"
+										class="form-range"
+										id="hoursRange"
+										min="1"
+										max="168"
+										value="24"
+										onchange="updateTimeRange(this.value)"
+									/>
+								</div>
+								<div class="col-md-4">
+									<div class="d-flex gap-2">
+										<button
+											class="btn btn-primary"
+											onclick="loadTweets()"
+										>
+											<i class="fas fa-search me-1"></i>
+											Load Tweets
+										</button>
+										<button
+											class="btn btn-outline-light"
+											onclick="clearData()"
+										>
+											<i class="fas fa-trash me-1"></i>
+											Clear
+										</button>
+									</div>
+								</div>
+								<div class="col-md-4">
+									<div class="d-flex gap-2">
+										<button
+											class="btn btn-info"
+											onclick="loadBotResponses()"
+										>
+											<i class="fas fa-robot me-1"></i>
+											Bot Responses
+										</button>
+										<button
+											class="btn btn-warning"
+											onclick="loadLogs()"
+										>
+											<i class="fas fa-file-alt me-1"></i>
+											View Logs
+										</button>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Loading Indicator -->
+			<div id="loading" class="text-center" style="display: none">
+				<div class="loading-spinner"></div>
+				<p class="mt-2">Loading data...</p>
+			</div>
+
+			<!-- Error Alert -->
+			<div
+				id="error-alert"
+				class="alert alert-danger"
+				style="display: none"
+			>
+				<i class="fas fa-exclamation-triangle me-2"></i>
+				<span id="error-message"></span>
+			</div>
+
+			<!-- Content Tabs -->
+			<div class="row mb-4">
+				<div class="col-12">
+					<ul class="nav nav-tabs" id="mainTabs" role="tablist">
+						<li class="nav-item" role="presentation">
+							<button
+								class="nav-link active"
+								id="tweets-tab"
+								data-bs-toggle="tab"
+								data-bs-target="#tweets-content"
+								type="button"
+								role="tab"
+							>
+								<i class="fas fa-twitter me-1"></i>
+								Tweets & Engagement
+							</button>
+						</li>
+						<li class="nav-item" role="presentation">
+							<button
+								class="nav-link"
+								id="bot-responses-tab"
+								data-bs-toggle="tab"
+								data-bs-target="#bot-responses-content"
+								type="button"
+								role="tab"
+							>
+								<i class="fas fa-robot me-1"></i>
+								Bot Responses
+							</button>
+						</li>
+						<li class="nav-item" role="presentation">
+							<button
+								class="nav-link"
+								id="logs-tab"
+								data-bs-toggle="tab"
+								data-bs-target="#logs-content"
+								type="button"
+								role="tab"
+							>
+								<i class="fas fa-file-alt me-1"></i>
+								System Logs
+							</button>
+						</li>
+					</ul>
+				</div>
+			</div>
+
+			<!-- Tab Content -->
+			<div class="tab-content" id="mainTabContent">
+				<!-- Tweets Tab -->
+				<div
+					class="tab-pane fade show active"
+					id="tweets-content"
+					role="tabpanel"
+				>
+					<!-- Tweets Container -->
+					<div id="tweets-container">
+						<!-- Tweets will be loaded here -->
+					</div>
+				</div>
+
+				<!-- Bot Responses Tab -->
+				<div
+					class="tab-pane fade"
+					id="bot-responses-content"
+					role="tabpanel"
+				>
+					<!-- Bot Responses Container -->
+					<div id="bot-responses-container">
+						<!-- Bot responses will be loaded here -->
+					</div>
+				</div>
+
+				<!-- Logs Tab -->
+				<div class="tab-pane fade" id="logs-content" role="tabpanel">
+					<!-- Log Controls -->
+					<div class="card mb-3">
+						<div class="card-body">
+							<div class="row align-items-center">
+								<div class="col-md-4">
+									<label for="logType" class="form-label"
+										>Log Type:</label
+									>
+									<select
+										class="form-select"
+										id="logType"
+										onchange="loadLogs()"
+									>
+										<option value="main">Main Logs</option>
+										<option value="errors">
+											Error Logs
+										</option>
+										<option value="daily">
+											Daily Logs
+										</option>
+									</select>
+								</div>
+								<div class="col-md-4">
+									<label for="logLines" class="form-label"
+										>Lines to Show:</label
+									>
+									<input
+										type="number"
+										class="form-control"
+										id="logLines"
+										value="100"
+										min="10"
+										max="1000"
+										onchange="loadLogs()"
+									/>
+								</div>
+								<div class="col-md-4">
+									<div class="d-flex gap-2">
+										<button
+											class="btn btn-primary"
+											onclick="loadLogs()"
+										>
+											<i class="fas fa-sync-alt me-1"></i>
+											Refresh Logs
+										</button>
+										<button
+											class="btn btn-outline-secondary"
+											onclick="clearLogs()"
+										>
+											<i class="fas fa-trash me-1"></i>
+											Clear View
+										</button>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Logs Container -->
+					<div id="logs-container">
+						<!-- Logs will be loaded here -->
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Refresh Button -->
+		<button
+			class="refresh-btn"
+			onclick="refreshData()"
+			title="Refresh Data"
+		>
+			<i class="fas fa-sync-alt"></i>
+		</button>
+
+		<!-- Scripts -->
+		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+		<script>
+			let currentHours = 24;
+			let tweetsData = [];
+
+			// Update time range display
+			function updateTimeRange(hours) {
+				currentHours = hours;
+				document.getElementById("hoursValue").textContent = hours;
+			}
+
+			// Show loading state
+			function showLoading() {
+				document.getElementById("loading").style.display = "block";
+				document.getElementById("tweets-container").style.display =
+					"none";
+				document.getElementById("error-alert").style.display = "none";
+			}
+
+			// Hide loading state
+			function hideLoading() {
+				document.getElementById("loading").style.display = "none";
+				document.getElementById("tweets-container").style.display =
+					"block";
+			}
+
+			// Show error message
+			function showError(message) {
+				document.getElementById("error-message").textContent = message;
+				document.getElementById("error-alert").style.display = "block";
+				hideLoading();
+			}
+
+			// Format timestamp
+			function formatTimestamp(timestamp) {
+				if (!timestamp) return "Unknown time";
+				const date = new Date(timestamp);
+				return (
+					date.toLocaleDateString() + " " + date.toLocaleTimeString()
+				);
+			}
+
+			// Format relative time
+			function formatRelativeTime(timestamp) {
+				if (!timestamp) return "Unknown time";
+				const date = new Date(timestamp);
+				const now = new Date();
+				const diffMs = now - date;
+				const diffMins = Math.floor(diffMs / 60000);
+				const diffHours = Math.floor(diffMins / 60);
+				const diffDays = Math.floor(diffHours / 24);
+
+				if (diffMins < 1) return "Just now";
+				if (diffMins < 60) return `${diffMins}m ago`;
+				if (diffHours < 24) return `${diffHours}h ago`;
+				return `${diffDays}d ago`;
+			}
+
+			// Load stats
+			async function loadStats() {
+				try {
+					const response = await fetch("/api/stats");
+					const data = await response.json();
+
+					document.getElementById("bot-responses-count").textContent =
+						(data.total_replies_processed || 0) +
+						(data.total_reposts_processed || 0);
+				} catch (error) {
+					console.error("Error loading stats:", error);
+				}
+			}
+
+			// Load tweets with engagement data
+			async function loadTweets() {
+				showLoading();
+
+				try {
+					const response = await fetch(
+						`/api/tweets?hours=${currentHours}&max_results=50`
+					);
+					const data = await response.json();
+
+					if (!response.ok) {
+						throw new Error(data.error || "Failed to load tweets");
+					}
+
+					tweetsData = data.tweets || [];
+					document.getElementById("tweets-count").textContent =
+						tweetsData.length;
+
+					await loadEngagementData();
+					renderTweets();
+					hideLoading();
+				} catch (error) {
+					console.error("Error loading tweets:", error);
+					showError("Failed to load tweets: " + error.message);
+				}
+			}
+
+			// Load engagement data for all tweets
+			async function loadEngagementData() {
+				let totalReplies = 0;
+				let totalReposts = 0;
+
+				for (let tweet of tweetsData) {
+					try {
+						const response = await fetch(
+							`/api/tweets/${tweet.id}/engagement?conversation_id=${tweet.conversation_id}`
+						);
+						const engagementData = await response.json();
+
+						tweet.replies = engagementData.replies || {
+							data: [],
+							count: 0,
+							processed_count: 0,
+						};
+						tweet.reposts = engagementData.reposts || {
+							data: [],
+							count: 0,
+							processed_count: 0,
+						};
+
+						totalReplies += tweet.replies.count;
+						totalReposts += tweet.reposts.count;
+					} catch (error) {
+						console.error(
+							`Error loading engagement for tweet ${tweet.id}:`,
+							error
+						);
+						tweet.replies = {
+							data: [],
+							count: 0,
+							processed_count: 0,
+						};
+						tweet.reposts = {
+							data: [],
+							count: 0,
+							processed_count: 0,
+						};
+					}
+				}
+
+				document.getElementById("replies-count").textContent =
+					totalReplies;
+				document.getElementById("reposts-count").textContent =
+					totalReposts;
+			}
+
+			// Render tweets in the UI
+			function renderTweets() {
+				const container = document.getElementById("tweets-container");
+
+				if (tweetsData.length === 0) {
+					container.innerHTML = `
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-info-circle fa-3x text-muted mb-3"></i>
+                            <h5>No tweets found</h5>
+                            <p class="text-muted">Try adjusting the time range or check back later.</p>
+                        </div>
+                    </div>
+                `;
+					return;
+				}
+
+				let html = "";
+
+				tweetsData.forEach((tweet) => {
+					const repliesHtml = renderReplies(tweet.replies.data);
+					const repostsHtml = renderReposts(tweet.reposts.data);
+
+					html += `
+                    <div class="card tweet-card">
+                        <div class="card-header">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">
+                                    <i class="fab fa-twitter text-primary me-2"></i>
+                                    Original Tweet
+                                </h6>
+                                <div class="d-flex gap-2">
+                                    <span class="badge bg-primary">${
+										tweet.public_metrics.like_count || 0
+									} likes</span>
+                                    <span class="badge bg-success">${
+										tweet.public_metrics.retweet_count || 0
+									} retweets</span>
+                                    <span class="badge bg-info">${
+										tweet.public_metrics.reply_count || 0
+									} replies</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">${tweet.text}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="timestamp">
+                                    <i class="fas fa-clock me-1"></i>
+                                    ${formatRelativeTime(tweet.created_at)}
+                                </small>
+                                <a href="${
+									tweet.url
+								}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-external-link-alt me-1"></i>
+                                    View on Twitter
+                                </a>
+                            </div>
+                            
+                            <!-- Engagement Section -->
+                            <div class="mt-4">
+                                <ul class="nav nav-tabs" id="engagement-tabs-${
+									tweet.id
+								}" role="tablist">
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#replies-${
+											tweet.id
+										}">
+                                            <i class="fas fa-reply me-1"></i>
+                                            Replies (${tweet.replies.count})
+                                            ${
+												tweet.replies.processed_count >
+												0
+													? `<span class="processed-badge ms-1">${tweet.replies.processed_count} processed</span>`
+													: ""
+											}
+                                        </button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#reposts-${
+											tweet.id
+										}">
+                                            <i class="fas fa-retweet me-1"></i>
+                                            Reposts (${tweet.reposts.count})
+                                            ${
+												tweet.reposts.processed_count >
+												0
+													? `<span class="processed-badge ms-1">${tweet.reposts.processed_count} processed</span>`
+													: ""
+											}
+                                        </button>
+                                    </li>
+                                </ul>
+                                <div class="tab-content mt-3">
+                                    <div class="tab-pane fade show active" id="replies-${
+										tweet.id
+									}">
+                                        ${repliesHtml}
+                                    </div>
+                                    <div class="tab-pane fade" id="reposts-${
+										tweet.id
+									}">
+                                        ${repostsHtml}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+				});
+
+				container.innerHTML = html;
+			}
+
+			// Render replies
+			function renderReplies(replies) {
+				if (!replies || replies.length === 0) {
+					return '<p class="text-muted text-center py-3">No replies found</p>';
+				}
+
+				return replies
+					.map(
+						(reply) => `
+                <div class="card reply-card mb-2">
+                    <div class="card-body">
+                        <div class="author-info">
+                            <img src="${
+								reply.author.profile_image_url ||
+								"https://via.placeholder.com/32"
+							}" 
+                                 alt="Avatar" class="author-avatar">
+                            <div>
+                                <strong>${
+									reply.author.name || "Unknown"
+								}</strong>
+                                <span class="text-muted">@${
+									reply.author.username || "unknown"
+								}</span>
+                                ${
+									reply.bot_replied
+										? '<span class="processed-badge ms-2">Bot Replied</span>'
+										: '<span class="pending-badge ms-2">Pending</span>'
+								}
+                            </div>
+                        </div>
+                        <p class="mb-2">${reply.text}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="timestamp">${formatRelativeTime(
+								reply.created_at
+							)}</small>
+                            <a href="${
+								reply.url
+							}" target="_blank" class="btn btn-sm btn-outline-light">
+                                <i class="fas fa-external-link-alt"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `
+					)
+					.join("");
+			}
+
+			// Render reposts
+			function renderReposts(reposts) {
+				if (!reposts || reposts.length === 0) {
+					return '<p class="text-muted text-center py-3">No reposts found</p>';
+				}
+
+				return reposts
+					.map(
+						(repost) => `
+                <div class="card repost-card mb-2">
+                    <div class="card-body">
+                        <div class="author-info">
+                            <img src="${
+								repost.author.profile_image_url ||
+								"https://via.placeholder.com/32"
+							}" 
+                                 alt="Avatar" class="author-avatar">
+                            <div>
+                                <strong>${
+									repost.author.name || "Unknown"
+								}</strong>
+                                <span class="text-muted">@${
+									repost.author.username || "unknown"
+								}</span>
+                                <span class="badge bg-warning ms-2">${
+									repost.is_retweet
+										? "Retweet"
+										: "Quote Tweet"
+								}</span>
+                                ${
+									repost.bot_commented
+										? '<span class="processed-badge ms-2">Bot Commented</span>'
+										: '<span class="pending-badge ms-2">Pending</span>'
+								}
+                            </div>
+                        </div>
+                        ${
+							repost.text
+								? `<p class="mb-2">${repost.text}</p>`
+								: ""
+						}
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="timestamp">${formatRelativeTime(
+								repost.created_at
+							)}</small>
+                            <a href="${
+								repost.url
+							}" target="_blank" class="btn btn-sm btn-outline-light">
+                                <i class="fas fa-external-link-alt"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `
+					)
+					.join("");
+			}
+
+			// Refresh all data
+			async function refreshData() {
+				const refreshBtn = document.querySelector(".refresh-btn");
+				refreshBtn.classList.add("loading");
+
+				try {
+					await loadStats();
+
+					// Check which tab is active and refresh accordingly
+					const activeTab = document.querySelector(
+						"#mainTabs .nav-link.active"
+					);
+					const activeTabId = activeTab ? activeTab.id : "tweets-tab";
+
+					switch (activeTabId) {
+						case "tweets-tab":
+							await loadTweets();
+							break;
+						case "bot-responses-tab":
+							await loadBotResponses();
+							break;
+						case "logs-tab":
+							await loadLogs();
+							break;
+						default:
+							await loadTweets();
+					}
+				} finally {
+					refreshBtn.classList.remove("loading");
+				}
+			}
+
+			// Clear data
+			function clearData() {
+				document.getElementById("tweets-container").innerHTML = "";
+				document.getElementById("tweets-count").textContent = "-";
+				document.getElementById("replies-count").textContent = "-";
+				document.getElementById("reposts-count").textContent = "-";
+				tweetsData = [];
+			}
+
+			// Load bot responses
+			async function loadBotResponses() {
+				showLoading();
+
+				try {
+					const response = await fetch(
+						"/api/bot-responses?max_results=50"
+					);
+					const data = await response.json();
+
+					if (!response.ok) {
+						throw new Error(
+							data.error || "Failed to load bot responses"
+						);
+					}
+
+					renderBotResponses(data.responses || []);
+
+					// Switch to bot responses tab
+					const tab = new bootstrap.Tab(
+						document.getElementById("bot-responses-tab")
+					);
+					tab.show();
+
+					hideLoading();
+				} catch (error) {
+					console.error("Error loading bot responses:", error);
+					showError("Failed to load bot responses: " + error.message);
+				}
+			}
+
+			// Render bot responses
+			function renderBotResponses(responses) {
+				const container = document.getElementById(
+					"bot-responses-container"
+				);
+
+				if (responses.length === 0) {
+					container.innerHTML = `
+						<div class="card">
+							<div class="card-body text-center">
+								<i class="fas fa-robot fa-3x text-muted mb-3"></i>
+								<h5>No bot responses found</h5>
+								<p class="text-muted">The bot hasn't responded to any tweets yet.</p>
+							</div>
+						</div>
+					`;
+					return;
+				}
+
+				let html = "";
+
+				responses.forEach((response) => {
+					const typeClass = response.type || "reply";
+					const typeIcon =
+						response.type === "repost_comment"
+							? "fa-retweet"
+							: "fa-reply";
+					const typeLabel =
+						response.type === "repost_comment"
+							? "Repost Comment"
+							: "Reply";
+
+					html += `
+						<div class="card bot-response-card type-${typeClass}">
+							<div class="card-header">
+								<div class="d-flex justify-content-between align-items-center">
+									<h6 class="mb-0">
+										<i class="fas ${typeIcon} me-2"></i>
+										${response.action || typeLabel}
+									</h6>
+									<div class="d-flex gap-2 align-items-center">
+										<span class="response-type-badge ${typeClass}">${typeLabel}</span>
+										<span class="badge bg-success">${response.status || "completed"}</span>
+									</div>
+								</div>
+							</div>
+							<div class="card-body">
+								<div class="d-flex justify-content-between align-items-center">
+									<div>
+										<p class="mb-1"><strong>Tweet ID:</strong> ${response.id}</p>
+										${
+											response.timestamp
+												? `<p class="mb-1"><strong>Processed:</strong> ${formatRelativeTime(
+														response.timestamp
+												  )}</p>`
+												: ""
+										}
+									</div>
+									<a href="${
+										response.tweet_url
+									}" target="_blank" class="btn btn-sm btn-outline-primary">
+										<i class="fas fa-external-link-alt me-1"></i>
+										View Tweet
+									</a>
+								</div>
+							</div>
+						</div>
+					`;
+				});
+
+				container.innerHTML = html;
+			}
+
+			// Load logs
+			async function loadLogs() {
+				const logType = document.getElementById("logType").value;
+				const logLines = document.getElementById("logLines").value;
+
+				showLoading();
+
+				try {
+					const response = await fetch(
+						`/api/logs?type=${logType}&lines=${logLines}`
+					);
+					const data = await response.json();
+
+					if (!response.ok) {
+						throw new Error(data.error || "Failed to load logs");
+					}
+
+					renderLogs(data.logs || [], data.type);
+
+					// Switch to logs tab
+					const tab = new bootstrap.Tab(
+						document.getElementById("logs-tab")
+					);
+					tab.show();
+
+					hideLoading();
+				} catch (error) {
+					console.error("Error loading logs:", error);
+					showError("Failed to load logs: " + error.message);
+				}
+			}
+
+			// Render logs
+			function renderLogs(logs, logType) {
+				const container = document.getElementById("logs-container");
+
+				if (logs.length === 0) {
+					container.innerHTML = `
+						<div class="card">
+							<div class="card-body text-center">
+								<i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+								<h5>No logs found</h5>
+								<p class="text-muted">No log entries found for ${logType} logs.</p>
+							</div>
+						</div>
+					`;
+					return;
+				}
+
+				let html = `
+					<div class="card">
+						<div class="card-header">
+							<h6 class="mb-0">
+								<i class="fas fa-file-alt me-2"></i>
+								${logType.charAt(0).toUpperCase() + logType.slice(1)} Logs (${
+					logs.length
+				} entries)
+							</h6>
+						</div>
+						<div class="card-body p-0">
+							<div class="log-container">
+				`;
+
+				logs.forEach((log) => {
+					const level = log.level || "INFO";
+					html += `
+						<div class="log-entry level-${level}">
+							<span class="log-timestamp">${log.timestamp}</span>
+							<span class="log-level ${level}">${level}</span>
+							${log.logger ? `<span class="text-muted">[${log.logger}]</span>` : ""}
+							${log.location ? `<span class="text-muted">(${log.location})</span>` : ""}
+							<br>
+							<span class="log-message">${log.message}</span>
+						</div>
+					`;
+				});
+
+				html += `
+							</div>
+						</div>
+					</div>
+				`;
+
+				container.innerHTML = html;
+
+				// Auto-scroll to bottom
+				const logContainer = container.querySelector(".log-container");
+				if (logContainer) {
+					logContainer.scrollTop = logContainer.scrollHeight;
+				}
+			}
+
+			// Clear logs
+			function clearLogs() {
+				document.getElementById("logs-container").innerHTML = "";
+			}
+
+			// Initialize the dashboard
+			document.addEventListener("DOMContentLoaded", function () {
+				loadStats();
+				loadTweets();
+
+				// Add tab event listeners
+				const tabButtons = document.querySelectorAll(
+					'#mainTabs button[data-bs-toggle="tab"]'
+				);
+				tabButtons.forEach((button) => {
+					button.addEventListener("shown.bs.tab", function (event) {
+						const targetId =
+							event.target.getAttribute("data-bs-target");
+
+						// Load data when switching to specific tabs
+						if (targetId === "#bot-responses-content") {
+							loadBotResponses();
+						} else if (targetId === "#logs-content") {
+							loadLogs();
+						}
+					});
+				});
+			});
+		</script>
+	</body>
+</html>
