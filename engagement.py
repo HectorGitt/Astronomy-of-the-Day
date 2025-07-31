@@ -26,27 +26,47 @@ from logging_config import setup_bot_logging
 # Setup enhanced logging
 logger = setup_bot_logging(debug_mode=False)
 
-# Configuration
+
+# Helper function to parse comma-separated keywords
+def parse_blacklist_keywords():
+    """Parse blacklist keywords from environment variable."""
+    keywords_str = config(
+        "BLACKLIST_KEYWORDS", default="spam,bot,fake,scam,crypto,nft,buy now"
+    )
+    if isinstance(keywords_str, str):
+        return [keyword.strip() for keyword in keywords_str.split(",")]
+    return ["spam", "bot", "fake", "scam", "crypto", "nft", "buy now"]
+
+
+# Configuration from environment variables
 ENGAGEMENT_CONFIG = {
-    "reply_interval_minutes": 1,  # Check for new replies every 1 minute
-    "repost_interval_minutes": 45,  # Check for reposts every 45 minutes
-    "max_replies_per_check": 5,  # Maximum replies to send per check
-    "max_repost_comments_per_check": 3,  # Maximum repost comments per check
-    "tweets_cache_minutes": 15,  # Cache tweets for 15 minutes to avoid rate limits
+    "reply_interval_minutes": config(
+        "REPLY_INTERVAL_MINUTES", default=16, cast=int
+    ),  # Check for new replies
+    "repost_interval_minutes": config(
+        "REPOST_INTERVAL_MINUTES", default=45, cast=int
+    ),  # Check for reposts
+    "max_replies_per_check": config(
+        "MAX_REPLIES_PER_CHECK", default=5, cast=int
+    ),  # Maximum replies to send per check
+    "max_repost_comments_per_check": config(
+        "MAX_REPOST_COMMENTS_PER_CHECK", default=3, cast=int
+    ),  # Maximum repost comments per check
+    "tweets_cache_minutes": config(
+        "TWEETS_CACHE_MINUTES", default=15, cast=int
+    ),  # Cache tweets for 15 minutes to avoid rate limits
     "engagement_hours": {  # Active hours for engagement (24-hour format)
-        "start": 1,  # 8 AM
-        "end": 22,  # 10 PM
+        "start": config(
+            "ENGAGEMENT_START_HOUR", default=8, cast=int
+        ),  # Start hour (24-hour format)
+        "end": config(
+            "ENGAGEMENT_END_HOUR", default=22, cast=int
+        ),  # End hour (24-hour format)
     },
-    "weekend_reduced_activity": True,  # Reduce activity on weekends
-    "blacklist_keywords": [  # Don't engage with tweets containing these
-        "spam",
-        "bot",
-        "fake",
-        "scam",
-        "crypto",
-        "nft",
-        "buy now",
-    ],
+    "weekend_reduced_activity": config(
+        "WEEKEND_REDUCED_ACTIVITY", default=True, cast=bool
+    ),  # Reduce activity on weekends
+    "blacklist_keywords": parse_blacklist_keywords(),  # Don't engage with tweets containing these
 }
 
 # File to track processed interactions
@@ -104,6 +124,33 @@ class EngagementBot:
             "timestamp": None,
             "cache_duration_minutes": ENGAGEMENT_CONFIG["tweets_cache_minutes"],
         }
+
+        # Log current configuration
+        logger.info("=== Current Bot Configuration ===")
+        logger.info(
+            f"Reply check interval: {ENGAGEMENT_CONFIG['reply_interval_minutes']} minutes"
+        )
+        logger.info(
+            f"Repost check interval: {ENGAGEMENT_CONFIG['repost_interval_minutes']} minutes"
+        )
+        logger.info(
+            f"Max replies per check: {ENGAGEMENT_CONFIG['max_replies_per_check']}"
+        )
+        logger.info(
+            f"Max repost comments per check: {ENGAGEMENT_CONFIG['max_repost_comments_per_check']}"
+        )
+        logger.info(
+            f"Tweet cache duration: {ENGAGEMENT_CONFIG['tweets_cache_minutes']} minutes"
+        )
+        logger.info(
+            f"Active hours: {ENGAGEMENT_CONFIG['engagement_hours']['start']}:00 - {ENGAGEMENT_CONFIG['engagement_hours']['end']}:00"
+        )
+        logger.info(
+            f"Weekend reduced activity: {ENGAGEMENT_CONFIG['weekend_reduced_activity']}"
+        )
+        logger.info(
+            f"Blacklisted keywords: {', '.join(ENGAGEMENT_CONFIG['blacklist_keywords'])}"
+        )
 
         logger.info("=== Engagement Bot Initialization Complete ===")
 
