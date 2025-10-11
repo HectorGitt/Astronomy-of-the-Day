@@ -5,6 +5,6 @@ schedule==1.2.0
 flask==3.0.0
 flask-cors==4.0.0
 pillow==10.4.0
-google-genai==0.8.3
+google-genai
 waitress==3.0.0
 google-cloud-aiplatform
