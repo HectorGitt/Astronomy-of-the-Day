@@ -1,0 +1,29 @@
+version: "3.8"
+
+services:
+    outfit-scheduler:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        ports:
+            - "8000:8000"
+        environment:
+            - PORT=8000
+            - PYTHONPATH=/app
+        env_file:
+            - .env
+        volumes:
+            - ./logs:/app/logs
+        restart: unless-stopped
+        healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 40s
+        networks:
+            - outfit-scheduler-network
+
+networks:
+    outfit-scheduler-network:
+        driver: bridge
