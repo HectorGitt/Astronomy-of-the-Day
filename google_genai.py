@@ -478,7 +478,7 @@ async def generate_text_with_gemini(
 
     try:
         # Initialize client if needed
-        client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
+        client = genai.Client(api_key=os.getenv("GOOGLE_GENAI_API_KEY"))
 
         response = client.models.generate_content(
             model=model,
