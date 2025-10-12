@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Outfit Generator Bot - Generates and posts AI fashion outfits to Twitter
-Uses AI to create 4 random outfit images and posts them to Twitter
+Uses Google Gemini AI to create 4 random outfit images and posts them to Twitter
 """
 
 import tweepy
@@ -13,8 +13,7 @@ import os
 import base64
 from io import BytesIO
 from PIL import Image as PILImage
-from google_genai import generate_outfit_image_from_text
-import openai
+from google_genai import generate_outfit_image_from_text, generate_text_with_gemini
 
 # Ensure logs directory exists
 logs_dir = os.path.join(os.path.dirname(__file__), "logs")
@@ -56,9 +55,6 @@ client = tweepy.Client(
     bearer_token, consumer_key, consumer_secret, access_token, access_token_secret
 )
 api = tweepy.API(auth=auth, wait_on_rate_limit=True)
-
-# Initialize OpenAI client for prompt refinement
-openai_client = openai.OpenAI(api_key=config("OPENAI_API_KEY"))
 
 # Outfit generation settings
 OUTFIT_STYLES = [
@@ -122,7 +118,7 @@ tries = 0
 
 
 async def refine_prompt_with_ai(basic_prompt, style, occasion, theme, gender):
-    """Use OpenAI to refine and enhance the basic prompt for better outfit generation."""
+    """Use Google Gemini to refine and enhance the basic prompt for better outfit generation."""
     try:
         refinement_prompt = f"""
         You are a fashion expert AI. Take this basic outfit description and transform it into a detailed, professional prompt for AI image generation.
@@ -147,22 +143,20 @@ async def refine_prompt_with_ai(basic_prompt, style, occasion, theme, gender):
         Return only the refined prompt, no additional text or explanations.
         """
 
-        response = openai_client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are a professional fashion prompt engineer. Create detailed, vivid prompts for AI image generation.",
-                },
-                {"role": "user", "content": refinement_prompt},
-            ],
+        # Use Gemini for prompt refinement
+        refined_prompt = await generate_text_with_gemini(
+            prompt=refinement_prompt,
+            model="gemini-1.5-flash",
             max_tokens=300,
             temperature=0.7,
         )
 
-        refined_prompt = response.choices[0].message.content.strip()
-        logging.info(f"Refined prompt for {style} outfit")
-        return refined_prompt
+        if refined_prompt:
+            logging.info(f"Refined prompt for {style} outfit")
+            return refined_prompt
+        else:
+            logging.error("Failed to get response from Gemini, using original prompt")
+            return basic_prompt
 
     except Exception as e:
         logging.error(f"Failed to refine prompt with AI: {e}")
@@ -205,16 +199,16 @@ def generate_random_prompts(count=4):
 
 async def generate_refined_prompts(count=4):
     """Generate and refine random outfit prompts using AI."""
-    logging.info("Generating and refining outfit prompts with AI...")
+    logging.info("Generating and refining outfit prompts with Gemini AI...")
 
     # First generate basic prompts
     basic_prompts = generate_random_prompts(count)
     refined_prompts = []
 
     for i, prompt_data in enumerate(basic_prompts, 1):
-        logging.info(f"Refining prompt {i}/{count} with AI...")
+        logging.info(f"Refining prompt {i}/{count} with Gemini...")
 
-        # Refine the prompt using OpenAI
+        # Refine the prompt using Gemini
         refined_prompt = await refine_prompt_with_ai(
             prompt_data["prompt"],
             prompt_data["style"],
@@ -237,7 +231,7 @@ async def generate_refined_prompts(count=4):
         # Small delay to avoid rate limits
         await asyncio.sleep(1)
 
-    logging.info("All prompts refined with AI")
+    logging.info("All prompts refined with Gemini AI")
     return refined_prompts
 
 
@@ -391,16 +385,16 @@ async def main():
     global tries, tweet_status
 
     logging.info("Starting Outfit Generator Bot")
-    logging.info("Using AI for outfit generation")
+    logging.info("Using Gemini AI for outfit generation and prompt refinement")
 
     while tries < 3 and not tweet_status:
         tries += 1
         logging.info(f"Attempt {tries} to generate and post outfits")
 
         try:
-            # Generate and refine random prompts with AI
+            # Generate and refine random prompts with Gemini AI
             prompts = await generate_refined_prompts(4)
-            logging.info("Generated and refined 4 outfit prompts with AI")
+            logging.info("Generated and refined 4 outfit prompts with Gemini AI")
 
             # Generate outfit images
             outfits = await generate_outfit_images(prompts)

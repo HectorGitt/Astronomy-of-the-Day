@@ -461,3 +461,45 @@ async def improve_outfit_with_image(
     return await outfit_generation_service.improve_outfit_with_image(
         outfit_image_base64, improvement_prompt, style, occasion
     )
+
+
+async def generate_text_with_gemini(
+    prompt: str,
+    model: str = "gemini-1.5-flash",
+    max_tokens: int = 300,
+    temperature: float = 0.7,
+) -> Optional[str]:
+    """
+    Generate text using Google Gemini for prompt refinement and other text tasks.
+    """
+    if not GOOGLE_GENAI_AVAILABLE:
+        logger.error("Google GenAI not available")
+        return None
+
+    try:
+        # Initialize client if needed
+        client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
+
+        response = client.models.generate_content(
+            model=model,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                temperature=temperature,
+                max_output_tokens=max_tokens,
+            ),
+        )
+
+        if response.candidates and len(response.candidates) > 0:
+            text_content = ""
+            for part in response.candidates[0].content.parts:
+                if part.text:
+                    text_content += part.text
+
+            return text_content.strip()
+
+        logger.error("No text generated in Gemini response")
+        return None
+
+    except Exception as e:
+        logger.error(f"Error generating text with Gemini: {str(e)}")
+        return None
