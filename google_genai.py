@@ -465,7 +465,7 @@ async def improve_outfit_with_image(
 
 async def generate_text_with_gemini(
     prompt: str,
-    model: str = "gemini-1.5-flash",
+    model: str = "gemini-2.5-flash",
     max_tokens: int = 300,
     temperature: float = 0.7,
 ) -> Optional[str]:
