@@ -5,7 +5,6 @@ Provides REST API endpoints for managing outfit generation scheduling
 """
 
 import logging
-import os
 from datetime import datetime
 from typing import Dict, List, Optional
 from contextlib import asynccontextmanager
@@ -276,16 +275,3 @@ async def run_outfit_generation():
     except Exception as e:
         logger.error(f"❌ Error in outfit generation: {e}")
         return {"status": "error", "message": str(e)}
-
-
-if __name__ == "__main__":
-    import uvicorn
-
-    # Run the server
-    uvicorn.run(
-        "fastapi_scheduler:app",
-        host="0.0.0.0",
-        port=int(os.getenv("PORT", 8000)),
-        reload=False,
-        log_level="info",
-    )
