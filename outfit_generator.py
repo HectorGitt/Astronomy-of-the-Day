@@ -16,12 +16,28 @@ from PIL import Image as PILImage
 from google_genai import generate_outfit_image_from_text
 import openai
 
+# Ensure logs directory exists
+logs_dir = os.path.join(os.path.dirname(__file__), "logs")
+try:
+    os.makedirs(logs_dir, exist_ok=True)
+    logging.info(f"Logs directory created/verified: {logs_dir}")
+except Exception as e:
+    # If we can't create logs directory, log to console only
+    logging.warning(
+        f"Could not create logs directory {logs_dir}: {e}. Logging to console only."
+    )
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(levelname)s - %(message)s",
+        handlers=[logging.StreamHandler()],
+    )
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
     handlers=[
-        logging.FileHandler("logs/outfit_generator.log"),
+        logging.FileHandler(os.path.join(logs_dir, "outfit_generator.log")),
         logging.StreamHandler(),
     ],
 )
@@ -265,10 +281,13 @@ async def generate_outfit_images(prompts):
                 logging.info(f"Successfully generated outfit {i}")
 
             else:
-                logging.error(f"Failed to generate outfit {i}")
+                logging.error(
+                    f"Failed to generate outfit {i}: {result.get('error', 'Unknown error') if result else 'No result returned'}"
+                )
 
         except Exception as e:
             logging.error(f"Error generating outfit {i}: {e}")
+            # Continue with other outfits even if one fails
             continue
 
     return generated_outfits
