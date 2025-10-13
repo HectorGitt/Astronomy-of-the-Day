@@ -146,7 +146,7 @@ async def refine_prompt_with_ai(basic_prompt, style, occasion, theme, gender):
         # Use Gemini for prompt refinement
         refined_prompt = await generate_text_with_gemini(
             prompt=refinement_prompt,
-            model="gemini-1.5-flash",
+            model="gemini-2.5-flash",
             max_tokens=300,
             temperature=0.7,
         )
