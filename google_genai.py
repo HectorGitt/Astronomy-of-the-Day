@@ -463,7 +463,7 @@ async def improve_outfit_with_image(
     )
 
 
-async def generate_text_with_vertexai(
+async def generate_text_with_gemini(
     prompt: str,
     model: str = "gemini-2.5-flash",  # Example Vertex AI Gemini model name
     max_tokens: int = 300,
