@@ -463,23 +463,29 @@ async def improve_outfit_with_image(
     )
 
 
-async def generate_text_with_gemini(
+async def generate_text_with_vertexai(
     prompt: str,
-    model: str = "gemini-2.5-flash",
+    model: str = "gemini-2.5-flash",  # Example Vertex AI Gemini model name
     max_tokens: int = 300,
     temperature: float = 0.7,
 ) -> Optional[str]:
     """
-    Generate text using Google Gemini for prompt refinement and other text tasks.
+    Generate text using Google Vertex AI Gemini or other Vertex AI text models.
     """
     if not GOOGLE_GENAI_AVAILABLE:
         logger.error("Google GenAI not available")
         return None
 
-    try:
-        # Initialize client if needed
-        client = genai.Client(api_key=os.getenv("GOOGLE_GENAI_API_KEY"))
+    project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
+    location = os.getenv("GOOGLE_CLOUD_LOCATION", "us-central1")
+    if not project_id:
+        logger.error("Google Cloud project ID not configured")
+        return None
 
+    try:
+        client = genai.Client(
+            vertexai=True, project=project_id, location=location
+        )
         response = client.models.generate_content(
             model=model,
             contents=prompt,
@@ -497,9 +503,9 @@ async def generate_text_with_gemini(
 
             return text_content.strip()
 
-        logger.error("No text generated in Gemini response")
+        logger.error("No text generated in Vertex AI response")
         return None
 
     except Exception as e:
-        logger.error(f"Error generating text with Gemini: {str(e)}")
+        logger.error(f"Error generating text with Vertex AI: {str(e)}")
         return None
