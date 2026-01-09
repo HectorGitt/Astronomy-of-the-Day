@@ -1,4 +1,11 @@
 openai~=1.58.1
 python-decouple==3.7
 tweepy==4.12.1
+pillow==10.4.0
+google-genai
+google-cloud-aiplatform
+fastapi==0.115.6
+uvicorn[standard]==0.32.1
+apscheduler==3.10.4
+pydantic==2.10.3
 beautifulsoup4
