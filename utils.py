@@ -20,30 +20,46 @@ def scrape_apod():
 
         soup = BeautifulSoup(response.text, "html.parser")
 
-        # Find media URL
-        # Look for the image link: <a href="image/...">
-        img_link = soup.find(
-            "a",
-            href=lambda x: x
-            and (x.startswith("image/") or (x.startswith("ap") and x.endswith(".jpg"))),
-        )
-
+        # Find media URL - check for video first, then images
         media_url = None
-        if img_link:
-            # Check if it wraps an image to be sure, or just trust the href
-            media_url = "https://apod.nasa.gov/apod/" + img_link["href"]
+
+        # Check for video element
+        video = soup.find("video")
+        if video:
+            source = video.find("source")
+            if source and source.get("src"):
+                media_url = "https://apod.nasa.gov/apod/" + source["src"]
+                logger.info("Found video media")
+
+        if not media_url:
+            # Look for the image link: <a href="image/...">
+            img_link = soup.find(
+                "a",
+                href=lambda x: x
+                and (
+                    x.startswith("image/")
+                    or (x.startswith("ap") and x.endswith(".jpg"))
+                ),
+            )
+
+            if img_link:
+                # Check if it wraps an image to be sure, or just trust the href
+                media_url = "https://apod.nasa.gov/apod/" + img_link["href"]
+                logger.info("Found image link")
 
         if not media_url:
             # Check for video iframe
             iframe = soup.find("iframe")
             if iframe:
                 media_url = iframe.get("src")
+                logger.info("Found iframe media")
 
         if not media_url:
             # Try finding generic img with src starting with image/
             img = soup.find("img", src=lambda x: x and x.startswith("image/"))
             if img:
                 media_url = "https://apod.nasa.gov/apod/" + img["src"]
+                logger.info("Found img tag media")
 
         if not media_url:
             logger.error("Could not find media link in scraped HTML")
