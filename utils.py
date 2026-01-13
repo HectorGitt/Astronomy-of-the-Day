@@ -120,6 +120,8 @@ def get_message(context):
 
                         Keep it under 200 characters, including spaces.
 
+                        Do not start the caption with 'When'. Use diverse sentence structures.
+
                         Use line breaks if it helps readability.
 
                         Do not use quotation marks in the caption.
