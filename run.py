@@ -6,6 +6,7 @@ import os
 import time
 import textwrap
 import logging
+from urllib.parse import urlparse
 from utils import get_message, scrape_apod
 
 # Configure logging
@@ -125,7 +126,9 @@ def tweet():
                     ".webm",
                 )
 
-                if media_url.endswith(img_formats):
+                # Ignore query strings (e.g. ...jpg?w=1772) when checking the extension
+                media_path = urlparse(media_url).path.lower()
+                if media_path.endswith(img_formats):
                     # Handle image
                     with open("aiod.jpg", "wb") as image:
                         total_length = int(request.headers.get("content-length", 0))
@@ -145,7 +148,7 @@ def tweet():
                     media_uploaded = True
                     logging.info("Image downloaded and uploaded to Twitter")
 
-                elif media_url.endswith(video_formats):
+                elif media_path.endswith(video_formats):
                     # Handle video
                     with open("aiod.mp4", "wb") as video:
                         total_length = int(request.headers.get("content-length", 0))
