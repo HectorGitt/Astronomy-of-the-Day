@@ -3,9 +3,16 @@ from decouple import config
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
+from urllib.parse import urljoin
 import logging
 
 logger = logging.getLogger(__name__)
+
+APOD_BASE_URL = "https://apod.nasa.gov/apod/"
+APOD_PAGE_URL = APOD_BASE_URL + "astropix.html"
+IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".gif", ".webp", ".tif", ".tiff")
+# Iframes that are tracking/analytics, never APOD media
+IFRAME_BLOCKLIST = ("googletagmanager.com", "google-analytics.com", "doubleclick.net")
 
 client = OpenAI(api_key=config("OPENAI_API_KEY"))
 
@@ -13,7 +20,7 @@ client = OpenAI(api_key=config("OPENAI_API_KEY"))
 def scrape_apod():
     logger.info("Scraping APOD website as fallback...")
     try:
-        response = requests.get("https://apod.nasa.gov/apod/astropix.html")
+        response = requests.get(APOD_PAGE_URL)
         if response.status_code != 200:
             logger.error(f"Failed to fetch APOD website: {response.status_code}")
             return None, None, None
@@ -32,33 +39,39 @@ def scrape_apod():
                 logger.info("Found video media")
 
         if not media_url:
-            # Look for the image link: <a href="image/...">
+            # Look for the image link: <a href="image/..."> (relative or absolute)
             img_link = soup.find(
                 "a",
                 href=lambda x: x
                 and (
-                    x.startswith("image/")
+                    x.strip().startswith("image/")
+                    or ("/apod/image/" in x and x.strip().lower().endswith(IMAGE_EXTENSIONS))
                     or (x.startswith("ap") and x.endswith(".jpg"))
                 ),
             )
 
             if img_link:
                 # Check if it wraps an image to be sure, or just trust the href
-                media_url = "https://apod.nasa.gov/apod/" + img_link["href"]
+                media_url = urljoin(APOD_BASE_URL, img_link["href"].strip())
                 logger.info("Found image link")
 
         if not media_url:
-            # Check for video iframe
-            iframe = soup.find("iframe")
-            if iframe:
-                media_url = iframe.get("src")
-                logger.info("Found iframe media")
+            # Check for video iframe, skipping trackers (e.g. Google Tag Manager <noscript> iframe)
+            for iframe in soup.find_all("iframe"):
+                src = (iframe.get("src") or "").strip()
+                if not src or iframe.find_parent("noscript"):
+                    continue
+                if any(host in src for host in IFRAME_BLOCKLIST):
+                    continue
+                media_url = urljoin(APOD_BASE_URL, src)
+                logger.info(f"Found iframe media: {media_url}")
+                break
 
         if not media_url:
             # Try finding generic img with src starting with image/
-            img = soup.find("img", src=lambda x: x and x.startswith("image/"))
+            img = soup.find("img", src=lambda x: x and "image/" in x)
             if img:
-                media_url = "https://apod.nasa.gov/apod/" + img["src"]
+                media_url = urljoin(APOD_BASE_URL, img["src"].strip())
                 logger.info("Found img tag media")
 
         if not media_url:

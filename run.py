@@ -34,6 +34,9 @@ api_status = False
 tries = 0
 image_status = False
 
+# Hosts whose page URLs are fine to tweet as a link when media can't be uploaded
+VIDEO_EMBED_HOSTS = ("youtube.com", "youtu.be", "vimeo.com", "apod.nasa.gov")
+
 
 def chunkstring(string, length):
     return textwrap.shorten(string, length, placeholder="...")
@@ -201,8 +204,13 @@ def tweet():
                             )
                         except Exception as e:
                             logging.error(f"Failed to upload video: {e}")
-                    else:
+                    elif any(host in media_url for host in VIDEO_EMBED_HOSTS):
                         logging.info("Posting tweet with media URL instead")
+                    else:
+                        logging.warning(
+                            f"Media URL is not a known media/video host, linking APOD page instead: {media_url}"
+                        )
+                        media_url = "https://apod.nasa.gov/apod/astropix.html"
             else:
                 logging.error(f"Failed to download media: {request.status_code}")
                 return
