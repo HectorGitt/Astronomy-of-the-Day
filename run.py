@@ -43,36 +43,50 @@ def chunkstring(string, length):
     return textwrap.shorten(string, length, placeholder="...")
 
 
+# Site assets the NASA API sometimes returns instead of the APOD media since
+# APOD moved to science.nasa.gov (e.g. the NASA logo)
+BAD_API_MEDIA_MARKERS = ("/wp-content/themes/", "nasa-logo")
+
+
+def api_data_looks_broken(data):
+    media_url = data.get("url") or ""
+    return (
+        not media_url
+        or any(marker in media_url for marker in BAD_API_MEDIA_MARKERS)
+        or data.get("title") == "NASA Science"
+    )
+
+
 def tweet_parser():
+    global api_status
     logging.info("Fetching Astronomy Picture of the Day from NASA API")
     response = requests.get(
         f"https://api.nasa.gov/planetary/apod?api_key={nasa_api_key}"
     )
     if response.status_code == 200:
-        global api_status
-        api_status = True
         logging.info("Successfully fetched data from NASA API")
 
         data = response.json()
-        date_str = data.get("date")
-        date_object = datetime.strptime(date_str, "%Y-%m-%d").date()
-        media_url = data.get("url")
 
-        # If API returns no URL, try scraping
-        if not media_url:
-            logging.info("NASA API returned no media URL. Attempting scrape...")
-            try:
-                # We mainly want the media URL from scrape if API failed to give one
-                _, scraped_url, _ = scrape_apod()
-                if scraped_url:
-                    media_url = scraped_url
-                    logging.info(f"Retrieved media URL from scrape: {media_url}")
-            except Exception as e:
-                logging.error(f"Failed to scrape for missing URL: {e}")
+        # The API can return a site asset (NASA logo) instead of the APOD; scrape instead
+        if api_data_looks_broken(data):
+            logging.warning(
+                f"NASA API returned unusable data (title={data.get('title')!r}, "
+                f"url={data.get('url')!r}). Attempting scrape..."
+            )
+            explanation, media_url, formatted_date = scrape_apod()
+            if explanation and media_url:
+                api_status = True
+                logging.info(f"Retrieved APOD from scrape: {media_url}")
+                return explanation, media_url, formatted_date
+            logging.error("Scrape failed too, skipping tweet")
+            return None, None, None
 
+        api_status = True
+        date_object = datetime.strptime(data.get("date"), "%Y-%m-%d").date()
         return (
             data.get("explanation"),
-            media_url,
+            data.get("url"),
             date_object.strftime("%a, %b %d, %Y"),
         )
     else:
